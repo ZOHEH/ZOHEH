@@ -32,27 +32,6 @@ body { background: var(--stage-bg); overflow: hidden; }
 	width: 100vw;
 }
 
-/* Subtle animated film grain over the whole stage for a cinematic, non-flat feel. */
-.grain {
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-	background-size: 180px 180px;
-	inset: -10%;
-	mix-blend-mode: overlay;
-	opacity: 0.05;
-	pointer-events: none;
-	position: fixed;
-	z-index: 5;
-}
-
-@keyframes grain-shift {
-	0%, 100% { transform: translate(0, 0); }
-	20% { transform: translate(-3%, 2%); }
-	40% { transform: translate(2%, -4%); }
-	60% { transform: translate(-2%, 4%); }
-	80% { transform: translate(3%, -2%); }
-}
-
-.grain { animation: grain-shift 1.2s steps(6) infinite; }
 
 /* The cutout box's aspect ratio is derived from the letters' actual measured
    pixel bounding box in the source artwork (x:270-3329, y:1500-2099 of a
@@ -61,8 +40,22 @@ body { background: var(--stage-bg); overflow: hidden; }
 	aspect-ratio: 3.565 / 1;
 	height: auto;
 	max-height: 70vh;
+	opacity: 0;
 	position: relative;
+	/* A strong ease-in: bright footage over black already reads as "mostly
+	   revealed" at moderate opacity, so the curve stays low for most of the
+	   duration and only ramps up sharply near the end — a held, flat color
+	   first, then the image arriving, rather than a quick even fade. */
+	transition: opacity 2.6s cubic-bezier(0.85, 0, 0.98, 0.35);
 	width: min(74vw, 1500px);
+}
+
+/* The page opens on a plain dark field — the wordmark only fades in once the
+   first clip is actually ready, instead of popping in with the page load. */
+.cutout.is-revealed { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+	.cutout { transition-duration: 0.4s; }
 }
 
 .reel {
@@ -134,7 +127,6 @@ body { background: var(--stage-bg); overflow: hidden; }
 
 @media (prefers-reduced-motion: reduce) {
 	.clip-video { transition: none !important; transform: none !important; }
-	.grain { animation: none; opacity: 0.03; }
 }
 
 /* Desktop: wide, letterboxed, generous negative space around the wordmark. */
@@ -151,7 +143,6 @@ body { background: var(--stage-bg); overflow: hidden; }
 		width: min(96vw, 640px);
 	}
 	.reel-vignette { background: radial-gradient(140% 100% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.6) 100%); }
-	.grain { opacity: 0.035; }
 }
 
 @media (max-width: 767px) and (orientation: landscape) {

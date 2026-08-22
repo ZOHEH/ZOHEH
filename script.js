@@ -1,3 +1,4 @@
+const cutout = document.querySelector(".cutout");
 const reel = document.querySelector(".reel");
 const veil = document.querySelector(".reel-veil");
 const slots = Array.from(document.querySelectorAll(".clip-slot"));
@@ -7,7 +8,18 @@ const videos = slots.map((slot) => slot.querySelector(".clip-video"));
 // change it in one place (style.css) and both the fade and its timing follow.
 const CROSSFADE_MS = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--crossfade")) || 2.6) * 1000;
 
-const HOLD_MS = 16000; // how long each clip stays on screen before crossfading
+const HOLD_MS = 16000; // how long each clip stays on screen before crossfading, at most
+
+// Several source clips are shorter than HOLD_MS. Since they're set to loop,
+// staying on screen for the full HOLD_MS would mean sitting through a hard
+// cut back to frame 0 mid-view — which is what was reading as a "jump" on
+// the shorter clips. Never show a clip longer than (its own length - a
+// buffer), so we're always gone via crossfade before it ever has to loop.
+function holdFor(video) {
+	const durationMs = video.duration * 1000;
+	if (!isFinite(durationMs) || durationMs <= 0) return HOLD_MS;
+	return Math.min(HOLD_MS, Math.max(4000, Math.round(durationMs) - 500));
+}
 
 // How long the cinematic push itself runs — kept comfortably longer than a
 // clip's actual time on screen (HOLD_MS + the crossfade in and out) so the
@@ -62,6 +74,7 @@ const playlist = [
 
 let activeIndex = 0; // which of the two slots is currently visible
 let order = 0; // position in the playlist, wraps via modulo
+let lastSrc = null; // the clip currently (or about to be) on screen — never repeated back-to-back
 
 function driftClip(video, item) {
 	if (reduceMotion) {
@@ -96,20 +109,54 @@ function loadClip(video, item) {
 	});
 }
 
+// Resolves once the video is confirmed actually rendering frames (not just
+// "play() was called") — with a safety timeout so a blocked/slow autoplay
+// can never leave the page stuck dark.
+function whenPlaying(video) {
+	return new Promise((resolve) => {
+		if (!video.paused && video.readyState >= 3) {
+			resolve();
+			return;
+		}
+		video.addEventListener("playing", resolve, { once: true });
+		setTimeout(resolve, 1200);
+	});
+}
+
 async function start() {
 	await loadClip(videos[0], playlist[0]);
 	driftClip(videos[0], playlist[0]);
 	slots[0].classList.add("is-active");
-	videos[0].play().catch(() => reel.classList.add("is-static"));
+
+	let playable = true;
+	try {
+		await videos[0].play();
+	} catch {
+		playable = false;
+		reel.classList.add("is-static");
+	}
+	if (playable) await whenPlaying(videos[0]);
+
+	// A guaranteed held beat on the plain color, regardless of how fast the
+	// clip loads — otherwise a well-cached first video could make the reveal
+	// fire almost instantly and skip past the "just one color" moment entirely.
+	await new Promise((resolve) => setTimeout(resolve, 500));
+
+	// The page opens completely dark — the wordmark and the footage inside it
+	// only appear together, once a frame is actually on screen, never the
+	// letter shape first and the image a moment later.
+	requestAnimationFrame(() => cutout.classList.add("is-revealed"));
+
+	lastSrc = playlist[0].src;
 
 	order = 1;
 	await loadClip(videos[1], playlist[order % playlist.length]);
 
-	scheduleNext();
+	scheduleNext(holdFor(videos[0]));
 }
 
-function scheduleNext() {
-	setTimeout(advance, HOLD_MS);
+function scheduleNext(ms) {
+	setTimeout(advance, ms);
 }
 
 async function advance() {
@@ -117,7 +164,15 @@ async function advance() {
 	const incomingSlot = slots[(activeIndex + 1) % 2];
 	const outgoingSlot = slots[activeIndex];
 	const outgoingVideo = videos[activeIndex];
-	const item = playlist[order % playlist.length];
+
+	// Guaranteed never to repeat the clip currently on screen, however `order`
+	// got here — not just because a plain round-robin happens not to.
+	let item = playlist[order % playlist.length];
+	while (item.src === lastSrc) {
+		order += 1;
+		item = playlist[order % playlist.length];
+	}
+	lastSrc = item.src;
 
 	driftClip(incomingVideo, item);
 	incomingVideo.currentTime = 0;
@@ -145,7 +200,7 @@ async function advance() {
 		loadClip(outgoingVideo, playlist[order % playlist.length]);
 	}, CROSSFADE_MS + 100);
 
-	scheduleNext();
+	scheduleNext(holdFor(incomingVideo));
 }
 
 start();
