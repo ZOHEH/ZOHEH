@@ -1,5 +1,5 @@
 :root {
-	--stage-bg: #090a08;
+	--stage-bg: #0a0a0a;
 	--crossfade: 2.6s;
 }
 
@@ -7,7 +7,11 @@
 
 html, body { margin: 0; height: 100%; }
 
-body { background: var(--stage-bg); overflow: hidden; }
+body {
+	background: var(--stage-bg);
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	overflow: hidden;
+}
 
 .sr-only {
 	position: absolute;
@@ -23,6 +27,7 @@ body { background: var(--stage-bg); overflow: hidden; }
 .stage {
 	align-items: center;
 	display: flex;
+	flex-direction: column;
 	justify-content: center;
 	min-height: 100dvh;
 	overflow: hidden;
@@ -30,6 +35,41 @@ body { background: var(--stage-bg); overflow: hidden; }
 		clamp(20px, 5vw, 96px) calc(env(safe-area-inset-left, 0px) + clamp(20px, 5vw, 96px));
 	position: relative;
 	width: 100vw;
+}
+
+.eyebrow, .tagline {
+	color: rgba(226, 228, 220, 0.68);
+	font-size: clamp(11px, 1.6vw, 15px);
+	font-weight: 400;
+	letter-spacing: 0.16em;
+	opacity: 0;
+	text-align: center;
+	text-transform: uppercase;
+	/* Matches EYEBROW_SETTLE_MS in script.js — the eyebrow is fully visible
+	   exactly when the wordmark takes over. */
+	transition: opacity 1.8s ease;
+}
+
+.eyebrow { margin: 0 0 clamp(18px, 3.4vw, 34px); }
+.tagline { margin: clamp(18px, 3.4vw, 34px) 0 0; }
+
+.eyebrow.is-revealed, .tagline.is-revealed { opacity: 1; }
+
+.footer-credit {
+	bottom: clamp(14px, 3vw, 28px);
+	color: rgba(226, 228, 220, 0.42);
+	font-size: 11px;
+	letter-spacing: 0.08em;
+	opacity: 0;
+	position: absolute;
+	text-align: center;
+	transition: opacity 1.6s ease;
+}
+
+.footer-credit.is-revealed { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+	.eyebrow, .tagline, .footer-credit { transition-duration: 0.4s; }
 }
 
 
@@ -42,11 +82,12 @@ body { background: var(--stage-bg); overflow: hidden; }
 	max-height: 70vh;
 	opacity: 0;
 	position: relative;
-	/* A strong ease-in: bright footage over black already reads as "mostly
-	   revealed" at moderate opacity, so the curve stays low for most of the
-	   duration and only ramps up sharply near the end — a held, flat color
-	   first, then the image arriving, rather than a quick even fade. */
-	transition: opacity 2.6s cubic-bezier(0.85, 0, 0.98, 0.35);
+	/* An ease-in (easeInQuart): bright footage over black already reads as
+	   "mostly revealed" at moderate opacity, so the curve still stays low for
+	   more of the duration than a plain fade — but the rise is spread across
+	   the last third of the transition, not crammed into its final instant,
+	   so it reads as a continuous glide rather than a hold-then-snap. */
+	transition: opacity 2.6s cubic-bezier(0.5, 0, 0.75, 0);
 	width: min(74vw, 1500px);
 }
 

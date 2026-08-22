@@ -3,14 +3,44 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-	<meta name="theme-color" content="#090a08">
-	<meta name="description" content="ZOHEH is coming soon.">
+	<meta name="theme-color" content="#0a0a0a">
+	<meta name="description" content="ZOHEH — a practice of architecture, design, and detail. Coming soon.">
+	<meta property="og:type" content="website">
+	<meta property="og:title" content="ZOHEH | Coming Soon">
+	<meta property="og:description" content="A practice of architecture, design, and detail.">
+	<!-- og:image is a relative path for now — once this is live on a real domain,
+	     change it to the absolute URL (https://yourdomain.com/images/og-preview.jpg)
+	     so it resolves correctly wherever the link is shared. -->
+	<meta property="og:image" content="images/og-preview.jpg">
+	<meta name="twitter:card" content="summary_large_image">
+	<meta name="twitter:title" content="ZOHEH | Coming Soon">
+	<meta name="twitter:description" content="A practice of architecture, design, and detail.">
+	<meta name="twitter:image" content="images/og-preview.jpg">
+	<link rel="icon" type="image/png" href="images/icon.png">
+	<link rel="apple-touch-icon" href="images/icon.png">
+	<!-- The mask image is the page's whole first impression — preload it so it's
+	     fetched immediately alongside the stylesheet instead of only starting
+	     once the CSS is parsed. `crossorigin` matches the credentials mode
+	     the browser uses when it's later loaded as a CSS mask-image, so the
+	     preload is actually reused instead of triggering a second fetch.
+	     (The first video already preloads itself via its own `preload="auto"`
+	     attribute — a link-preload `as="video"` isn't a supported value.) -->
+	<link rel="preload" as="image" href="images/logo/ZOHEH Logo White.jpg" crossorigin>
 	<title>ZOHEH | Coming Soon</title>
 	<link rel="stylesheet" href="style.css">
+	<!-- The reveal (and the video itself) is entirely JS-driven, so without it
+	     the page would stay black forever — force everything visible instead,
+	     showing the wordmark filled with its static fallback gradient. -->
+	<noscript>
+		<style>
+			.cutout, .eyebrow, .tagline, .footer-credit { opacity: 1 !important; transition: none !important; }
+		</style>
+	</noscript>
 </head>
 <body>
 	<main class="stage">
 		<h1 class="sr-only">ZOHEH is coming soon</h1>
+		<p class="eyebrow">Coming Soon</p>
 		<div class="cutout" role="img" aria-label="The ZOHEH wordmark, cut out of a dark field, revealing a slowly moving landscape behind it">
 			<div class="reel">
 				<div class="clip-slot">
@@ -23,6 +53,8 @@
 				<div class="reel-vignette"></div>
 			</div>
 		</div>
+		<p class="tagline">A practice of architecture, design, and detail</p>
+		<p class="footer-credit">&copy; 2026 ZOHEH. All rights reserved.</p>
 	</main>
 	<script src="script.js" defer></script>
 </body>

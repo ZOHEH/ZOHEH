@@ -1,4 +1,7 @@
 const cutout = document.querySelector(".cutout");
+const eyebrow = document.querySelector(".eyebrow");
+const tagline = document.querySelector(".tagline");
+const footerCredit = document.querySelector(".footer-credit");
 const reel = document.querySelector(".reel");
 const veil = document.querySelector(".reel-veil");
 const slots = Array.from(document.querySelectorAll(".clip-slot"));
@@ -123,11 +126,24 @@ function whenPlaying(video) {
 	});
 }
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// The eyebrow and the wordmark begin appearing together — a matched
+// simultaneous reveal, both starting right after the same opening beat on
+// plain black — with the tagline and credit line trailing afterward once the
+// wordmark's own reveal is well underway.
+const TAGLINE_DELAY_MS = 2200; // after the wordmark starts revealing
+const FOOTER_DELAY_MS = 2900;
+
 async function start() {
+	// A brief opening beat on plain black before anything starts, regardless
+	// of how fast the clip loads.
+	await wait(300);
+	requestAnimationFrame(() => eyebrow.classList.add("is-revealed"));
+
 	await loadClip(videos[0], playlist[0]);
 	driftClip(videos[0], playlist[0]);
 	slots[0].classList.add("is-active");
-
 	let playable = true;
 	try {
 		await videos[0].play();
@@ -137,15 +153,14 @@ async function start() {
 	}
 	if (playable) await whenPlaying(videos[0]);
 
-	// A guaranteed held beat on the plain color, regardless of how fast the
-	// clip loads — otherwise a well-cached first video could make the reveal
-	// fire almost instantly and skip past the "just one color" moment entirely.
-	await new Promise((resolve) => setTimeout(resolve, 500));
-
-	// The page opens completely dark — the wordmark and the footage inside it
-	// only appear together, once a frame is actually on screen, never the
-	// letter shape first and the image a moment later.
+	// The wordmark and the footage inside it only appear together, once a
+	// frame is actually on screen — never the letter shape first and the
+	// image a moment later.
 	requestAnimationFrame(() => cutout.classList.add("is-revealed"));
+
+	// Tagline and credit close out after the wordmark's own reveal is well underway.
+	setTimeout(() => tagline.classList.add("is-revealed"), TAGLINE_DELAY_MS);
+	setTimeout(() => footerCredit.classList.add("is-revealed"), FOOTER_DELAY_MS);
 
 	lastSrc = playlist[0].src;
 
@@ -202,5 +217,16 @@ async function advance() {
 
 	scheduleNext(holdFor(incomingVideo));
 }
+
+// If the browser restores this page from its back/forward cache — e.g. the
+// visitor navigated away and hit "back" — it resumes the exact in-memory
+// state instead of re-running the page, so the reveal would already be long
+// finished and the video mid-cycle rather than starting over. Force a real
+// reload so every visit, fresh or restored, always plays from the beginning.
+window.addEventListener("pageshow", (event) => {
+	if (event.persisted) {
+		location.reload();
+	}
+});
 
 start();
