@@ -1,0 +1,159 @@
+:root {
+	--stage-bg: #090a08;
+	--crossfade: 2.6s;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; height: 100%; }
+
+body { background: var(--stage-bg); overflow: hidden; }
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	white-space: nowrap;
+	clip: rect(0, 0, 0, 0);
+}
+
+/* The stage is a fixed dark field the wordmark sits in as negative space. */
+.stage {
+	align-items: center;
+	display: flex;
+	justify-content: center;
+	min-height: 100dvh;
+	overflow: hidden;
+	padding: clamp(20px, 5vw, 96px) calc(env(safe-area-inset-right, 0px) + clamp(20px, 5vw, 96px))
+		clamp(20px, 5vw, 96px) calc(env(safe-area-inset-left, 0px) + clamp(20px, 5vw, 96px));
+	position: relative;
+	width: 100vw;
+}
+
+/* Subtle animated film grain over the whole stage for a cinematic, non-flat feel. */
+.grain {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+	background-size: 180px 180px;
+	inset: -10%;
+	mix-blend-mode: overlay;
+	opacity: 0.05;
+	pointer-events: none;
+	position: fixed;
+	z-index: 5;
+}
+
+@keyframes grain-shift {
+	0%, 100% { transform: translate(0, 0); }
+	20% { transform: translate(-3%, 2%); }
+	40% { transform: translate(2%, -4%); }
+	60% { transform: translate(-2%, 4%); }
+	80% { transform: translate(3%, -2%); }
+}
+
+.grain { animation: grain-shift 1.2s steps(6) infinite; }
+
+/* The cutout box's aspect ratio is derived from the letters' actual measured
+   pixel bounding box in the source artwork (x:270-3329, y:1500-2099 of a
+   3600x3600 canvas, centered), plus uniform clear-space padding — not eyeballed. */
+.cutout {
+	aspect-ratio: 3.565 / 1;
+	height: auto;
+	max-height: 70vh;
+	position: relative;
+	width: min(74vw, 1500px);
+}
+
+.reel {
+	background: linear-gradient(160deg, #1b2b22, #0d1712);
+	inset: 0;
+	overflow: hidden;
+	position: absolute;
+
+	/* The exact wordmark geometry, used as a luminance mask: white letters stay
+	   visible, the black field around them hides everything underneath. Size/
+	   position are computed from the measured bounding box above, not guessed —
+	   "center center" because the letters sit dead-center in the square canvas. */
+	-webkit-mask-image: url("images/logo/ZOHEH Logo White.jpg");
+	mask-image: url("images/logo/ZOHEH Logo White.jpg");
+	-webkit-mask-position: center center;
+	mask-position: center center;
+	-webkit-mask-repeat: no-repeat;
+	mask-repeat: no-repeat;
+	-webkit-mask-size: 105.3% auto;
+	mask-size: 105.3% auto;
+	mask-mode: luminance;
+}
+
+/* Opacity (the crossfade) lives on the slot; the transform (the cinematic
+   push) lives on the video inside it. Splitting them means the slow drift
+   never fights with, or gets reset by, the fade — see script.js's driftClip. */
+.clip-slot {
+	inset: 0;
+	opacity: 0;
+	overflow: hidden;
+	position: absolute;
+	transition: opacity var(--crossfade) ease;
+}
+
+.clip-slot.is-active { opacity: 1; }
+
+.clip-video {
+	height: 100%;
+	object-fit: cover;
+	object-position: center 45%;
+	width: 100%;
+	will-change: transform;
+}
+
+/* Darkens the edges of whatever is visible through the letters, so nothing behind
+   ever fully resolves — the "almost reveals, never quite" read the page is built on. */
+.reel-vignette {
+	background: radial-gradient(120% 90% at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.55) 100%);
+	inset: 0;
+	pointer-events: none;
+	position: absolute;
+}
+
+/* A brief, gentle dip in brightness during each crossfade — masks the exposure
+   mismatch between clips (a bright rocky peak vs. a dim lake at dusk) the way a
+   dissolve-through-black would in film editing, instead of a raw hard cut. */
+.reel-veil {
+	background: #000;
+	inset: 0;
+	opacity: 0;
+	pointer-events: none;
+	position: absolute;
+	transition: opacity 1.3s ease;
+}
+
+.reel-veil.is-boosted { opacity: 0.32; }
+
+.reel.is-static .clip-slot { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+	.clip-video { transition: none !important; transform: none !important; }
+	.grain { animation: none; opacity: 0.03; }
+}
+
+/* Desktop: wide, letterboxed, generous negative space around the wordmark. */
+@media (min-width: 768px) {
+	.stage { padding: clamp(24px, 6vw, 120px); }
+	.cutout { width: min(72vw, 1500px); }
+}
+
+/* Phone: the wordmark fills nearly the full width, portrait-friendly framing. */
+@media (max-width: 767px) {
+	.stage { padding: 18px; }
+	.cutout {
+		max-height: 50vh;
+		width: min(96vw, 640px);
+	}
+	.reel-vignette { background: radial-gradient(140% 100% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.6) 100%); }
+	.grain { opacity: 0.035; }
+}
+
+@media (max-width: 767px) and (orientation: landscape) {
+	.cutout { max-height: 60vh; width: min(80vw, 900px); }
+}
