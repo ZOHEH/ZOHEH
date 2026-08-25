@@ -16,8 +16,11 @@
 	<meta name="twitter:title" content="ZOHEH | Coming Soon">
 	<meta name="twitter:description" content="A practice of architecture & design.">
 	<meta name="twitter:image" content="images/og-preview.jpg">
-	<link rel="icon" type="image/png" href="images/icon.png">
-	<link rel="apple-touch-icon" href="images/icon.png">
+	<!-- The ?v= query string is a cache-buster — favicons are cached far more
+	     aggressively than other assets, and browsers will keep showing an old
+	     one indefinitely otherwise. Bump this number any time icon.png changes. -->
+	<link rel="icon" type="image/png" href="images/icon.png?v=4">
+	<link rel="apple-touch-icon" href="images/icon.png?v=4">
 	<!-- The mask image is the page's whole first impression — preload it so it's
 	     fetched immediately alongside the stylesheet instead of only starting
 	     once the CSS is parsed. `crossorigin` matches the credentials mode
